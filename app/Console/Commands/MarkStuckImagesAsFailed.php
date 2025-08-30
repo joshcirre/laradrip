@@ -15,7 +15,8 @@ class MarkStuckImagesAsFailed extends Command
     protected $signature = 'images:mark-failed 
                             {--hours=1 : Mark images stuck in processing/pending for more than X hours as failed}
                             {--dry-run : Show what would be marked as failed without actually updating}
-                            {--all : Mark ALL processing/pending images as failed regardless of time}';
+                            {--all : Mark ALL processing/pending images as failed regardless of time}
+                            {--yes : Skip confirmation and proceed}';
 
     /**
      * The console command description.
@@ -67,7 +68,10 @@ class MarkStuckImagesAsFailed extends Command
             return Command::SUCCESS;
         }
 
-        if ($this->confirm('Do you want to mark these images as failed?')) {
+        // Skip confirmation if --yes is provided
+        $shouldProceed = $this->option('yes') || $this->confirm('Do you want to mark these images as failed?');
+        
+        if ($shouldProceed) {
             $updated = 0;
 
             // Update each image individually to trigger model events and broadcasting
