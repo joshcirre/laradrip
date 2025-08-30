@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Database\Eloquent\BroadcastsEvents;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Image extends Model
 {
-    use BroadcastsEvents;
+    use BroadcastsEvents, HasFactory;
 
     protected $fillable = [
         'prompt',

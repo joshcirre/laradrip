@@ -109,6 +109,7 @@ new class extends Component {
                                 playsinline 
                                 muted
                                 class="w-full h-full object-cover rounded-lg border border-gray-300"
+                                style="transform: scaleX(-1);"
                             ></video>
                         </div>
                     @else
@@ -262,7 +263,10 @@ new class extends Component {
                 canvas.height = video.videoHeight;
                 
                 const context = canvas.getContext('2d');
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Flip the canvas horizontally to counteract the mirror effect
+                context.scale(-1, 1);
+                context.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
                 
                 // Convert to base64
                 const imageData = canvas.toDataURL('image/jpeg', 0.8);

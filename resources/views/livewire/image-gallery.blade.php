@@ -7,18 +7,13 @@ use Livewire\WithPagination;
 
 new class extends Component {
     use WithPagination;
-    
-    public $perPage = 12;
-
-    public function mount(): void
-    {
-        // Initial load happens via with() method
-    }
 
     public function with(): array
     {
         return [
-            'images' => Image::orderBy('created_at', 'desc')->paginate($this->perPage)
+            'images' => Image::orderBy('created_at', 'desc')->paginate(12),
+            'completedCount' => Image::where('status', 'completed')->count(),
+            'processingCount' => Image::whereIn('status', ['pending', 'processing'])->count(),
         ];
     }
 
@@ -36,7 +31,7 @@ new class extends Component {
         // The with() method will automatically re-query when component refreshes
         // The dot prefix is required for model broadcast events
     }
-    
+
     #[On('photo-captured')]
     public function onPhotoCaptured(): void
     {
@@ -44,9 +39,16 @@ new class extends Component {
         $this->resetPage();
     }
 
-    public function loadMore(): void
+    public function retryImage(Image $image): void
     {
-        $this->perPage += 12;
+        // Reset the image status to pending and clear any error message
+        $image->update([
+            'status' => 'pending',
+            'error_message' => null,
+        ]);
+        
+        // Dispatch the job to regenerate the image
+        \App\Jobs\GenerateImageJob::dispatch($image);
     }
 }; ?>
 
@@ -54,13 +56,13 @@ new class extends Component {
     <div class="space-y-4">
         <div class="flex items-center justify-between">
             <h2 class="text-lg font-semibold text-gray-900">AI-Generated Images</h2>
-            @if($images->total() > 0)
+            @if($completedCount > 0)
                 <p class="text-sm text-gray-600">
-                    {{ $images->where('status', 'completed')->count() }} AI-generated images ✨
+                    {{ $completedCount }} AI-generated images ✨
                 </p>
             @endif
         </div>
-        
+
         @if ($images->total() === 0)
             <div class="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-16 h-16 mx-auto mb-4 text-gray-300">
@@ -78,8 +80,8 @@ new class extends Component {
                         <div class="bg-white border border-gray-200 hover:border-gray-300 transition-colors overflow-hidden rounded-lg">
                             @if ($image->status === 'completed' && $image->generated_image_path)
                                 <div class="aspect-square relative">
-                                    <img 
-                                        src="{{ Storage::url($image->generated_image_path) }}" 
+                                    <img
+                                        src="{{ Storage::url($image->generated_image_path) }}"
                                         alt="AI-generated image"
                                         class="w-full h-full object-cover transition-transform group-hover:scale-105"
                                         loading="lazy"
@@ -87,8 +89,8 @@ new class extends Component {
                                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                                         <div class="absolute bottom-4 left-4 right-4">
                                             <p class="text-white text-sm font-medium mb-2">Original photo:</p>
-                                            <img 
-                                                src="{{ Storage::url($image->webcam_image_path) }}" 
+                                            <img
+                                                src="{{ Storage::url($image->webcam_image_path) }}"
                                                 alt="Original"
                                                 class="w-16 h-16 object-cover rounded-lg border-2 border-white/80"
                                             >
@@ -105,8 +107,8 @@ new class extends Component {
                                         <p class="text-xs text-gray-500 mt-1">This may take a moment</p>
                                     </div>
                                     <div class="absolute bottom-4 left-4">
-                                        <img 
-                                            src="{{ Storage::url($image->webcam_image_path) }}" 
+                                        <img
+                                            src="{{ Storage::url($image->webcam_image_path) }}"
                                             alt="Processing"
                                             class="w-16 h-16 object-cover rounded-lg border-2 border-gray-200 opacity-75"
                                         >
@@ -125,15 +127,15 @@ new class extends Component {
                                         </p>
                                     </div>
                                     <div class="absolute bottom-4 left-4">
-                                        <img 
-                                            src="{{ Storage::url($image->webcam_image_path) }}" 
+                                        <img
+                                            src="{{ Storage::url($image->webcam_image_path) }}"
                                             alt="Queued"
                                             class="w-16 h-16 object-cover rounded-lg border-2 border-gray-200 opacity-50"
                                         >
                                     </div>
                                 </div>
                             @else
-                                <div class="aspect-square bg-red-50 flex items-center justify-center">
+                                <div class="aspect-square bg-red-50 flex items-center justify-center relative">
                                     <div class="text-center px-4">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10 mx-auto mb-3 text-red-500">
                                             <circle cx="12" cy="12" r="10"/>
@@ -148,6 +150,25 @@ new class extends Component {
                                                 {{ Str::limit($image->error_message, 50) }}
                                             </p>
                                         @endif
+                                        <button 
+                                            wire:click="retryImage({{ $image->id }})"
+                                            class="mt-3 px-3 py-1.5 bg-white border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-1">
+                                                <path d="M21.5 2v6h-6"/>
+                                                <path d="M2.5 22v-6h6"/>
+                                                <path d="M2 11.5a10 10 0 0 1 18.8-4.3"/>
+                                                <path d="M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                                            </svg>
+                                            Try Again
+                                        </button>
+                                    </div>
+                                    <div class="absolute bottom-4 left-4">
+                                        <img
+                                            src="{{ Storage::url($image->webcam_image_path) }}"
+                                            alt="Failed"
+                                            class="w-16 h-16 object-cover rounded-lg border-2 border-red-200 opacity-50"
+                                        >
                                     </div>
                                 </div>
                             @endif
@@ -155,23 +176,20 @@ new class extends Component {
                     </div>
                 @endforeach
             </div>
-            
-            @if($images->hasMorePages())
-                <div class="flex justify-center mt-6">
-                    <flux:button variant="ghost" wire:click="loadMore" wire:loading.attr="disabled">
-                        <span wire:loading.remove>Load More ({{ $images->total() - $images->count() }} remaining)</span>
-                        <span wire:loading>Loading...</span>
-                    </flux:button>
+
+            @if($images->hasPages())
+                <div class="mt-6">
+                    {{ $images->links() }}
                 </div>
             @endif
-            
-            @if($images->where('status', 'pending')->count() > 0 || $images->where('status', 'processing')->count() > 0)
+
+            @if($processingCount > 0)
                 <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <div class="flex items-center gap-2">
                         <div class="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
                         <p class="text-sm text-blue-700">
-                            AI is generating {{ $images->whereIn('status', ['pending', 'processing'])->count() }} 
-                            {{ Str::plural('image', $images->whereIn('status', ['pending', 'processing'])->count()) }}. 
+                            AI is generating {{ $processingCount }}
+                            {{ Str::plural('image', $processingCount) }}.
                             This may take a moment...
                         </p>
                     </div>
