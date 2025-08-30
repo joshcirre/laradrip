@@ -17,7 +17,7 @@
                 <h1 class="text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900">
                     Laravel Drip Me Out
                 </h1>
-                <a href="https://github.com/yourusername/laradrip" target="_blank" rel="noopener noreferrer"
+                <a href="https://github.com/joshcirre/laradrip" target="_blank" rel="noopener noreferrer"
                    class="text-gray-500 hover:text-gray-700 transition-colors"
                    aria-label="View source code on GitHub">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
