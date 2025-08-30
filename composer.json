@@ -15,7 +15,8 @@
         "league/flysystem-aws-s3-v3": "^3.0",
         "livewire/flux": "^2.2",
         "livewire/flux-pro": "^2.2",
-        "livewire/volt": "^1.7.0"
+        "livewire/volt": "^1.7.0",
+        "pusher/pusher-php-server": "^7.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
