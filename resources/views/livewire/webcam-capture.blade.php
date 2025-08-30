@@ -246,14 +246,16 @@ new class extends Component {
                 @elseif ($previewMode && $previewImage)
                     <div class="relative" style="aspect-ratio: 4/3;">
                         <img 
+                            id="preview-image"
                             src="{{ $previewImage }}" 
                             alt="AI Preview" 
                             class="w-full h-full object-cover rounded-lg border border-gray-300"
+                            style="-webkit-touch-callout: default;"
                         />
-                        <flux:badge variant="primary" class="absolute top-2 right-2">
+                        <flux:badge variant="primary" class="absolute top-2 right-2 pointer-events-none">
                             AI Preview
                         </flux:badge>
-                        <div class="absolute bottom-2 left-2">
+                        <div class="absolute bottom-2 left-2 pointer-events-none">
                             <img 
                                 src="{{ $capturedImage }}" 
                                 alt="Original" 
@@ -362,24 +364,37 @@ new class extends Component {
                     </flux:button>
                 </div>
             @elseif ($previewMode)
-                <flux:button 
-                    variant="ghost" 
-                    icon="arrow-path" 
-                    wire:click="retakePhoto"
-                    :disabled="$isProcessing"
-                >
-                    Try Another Photo
-                </flux:button>
-                <flux:button 
-                    variant="primary" 
-                    icon="check" 
-                    wire:click="savePreview"
-                    :disabled="$isProcessing"
-                    wire:loading.attr="disabled"
-                >
-                    <span wire:loading.remove wire:target="savePreview">Save This Image</span>
-                    <span wire:loading wire:target="savePreview">Saving...</span>
-                </flux:button>
+                <div class="flex flex-col gap-3 w-full max-w-md">
+                    <div class="flex gap-3">
+                        <flux:button 
+                            variant="ghost" 
+                            icon="arrow-path" 
+                            wire:click="retakePhoto"
+                            :disabled="$isProcessing"
+                        >
+                            Try Another
+                        </flux:button>
+                        <flux:button 
+                            variant="primary" 
+                            icon="check" 
+                            wire:click="savePreview"
+                            :disabled="$isProcessing"
+                            wire:loading.attr="disabled"
+                            class="flex-1"
+                        >
+                            <span wire:loading.remove wire:target="savePreview">Save to Gallery</span>
+                            <span wire:loading wire:target="savePreview">Saving...</span>
+                        </flux:button>
+                    </div>
+                    <flux:button 
+                        variant="ghost" 
+                        icon="arrow-down-tray" 
+                        onclick="downloadPreviewImage()"
+                        class="w-full hidden sm:block"
+                    >
+                        Download Image
+                    </flux:button>
+                </div>
             @endif
         </div>
     </div>
@@ -487,6 +502,19 @@ new class extends Component {
         // Initial check if capturing
         if ($wire.isCapturing) {
             startWebcam();
+        }
+        
+        // Download preview image function
+        window.downloadPreviewImage = function() {
+            const img = document.getElementById('preview-image');
+            if (img) {
+                const link = document.createElement('a');
+                link.href = img.src;
+                link.download = 'ai-generated-' + Date.now() + '.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
         }
     </script>
     @endscript

@@ -85,8 +85,9 @@ new class extends Component {
                                         alt="AI-generated image"
                                         class="w-full h-full object-cover transition-transform group-hover:scale-105"
                                         loading="lazy"
+                                        style="-webkit-touch-callout: default;"
                                     >
-                                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                                         <div class="absolute bottom-4 left-4 right-4">
                                             <p class="text-white text-sm font-medium mb-2">Original photo:</p>
                                             <img
@@ -96,6 +97,18 @@ new class extends Component {
                                             >
                                         </div>
                                     </div>
+                                    <a 
+                                        href="{{ Storage::url($image->generated_image_path) }}"
+                                        download="ai-generated-{{ $image->id }}.png"
+                                        class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block"
+                                        onclick="event.stopPropagation();"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-700">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                            <polyline points="7 10 12 15 17 10"/>
+                                            <line x1="12" y1="15" x2="12" y2="3"/>
+                                        </svg>
+                                    </a>
                                 </div>
                             @elseif ($image->status === 'processing')
                                 <div class="aspect-square bg-gray-50 flex items-center justify-center relative">
