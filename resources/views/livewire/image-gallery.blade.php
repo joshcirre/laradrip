@@ -79,7 +79,7 @@ new class extends Component {
                             @if ($image->status === 'completed' && $image->generated_image_path)
                                 <div class="aspect-square relative">
                                     <img 
-                                        src="{{ asset('storage/' . $image->generated_image_path) }}" 
+                                        src="{{ Storage::url($image->generated_image_path) }}" 
                                         alt="AI-generated image"
                                         class="w-full h-full object-cover transition-transform group-hover:scale-105"
                                         loading="lazy"
@@ -88,7 +88,7 @@ new class extends Component {
                                         <div class="absolute bottom-4 left-4 right-4">
                                             <p class="text-white text-sm font-medium mb-2">Original photo:</p>
                                             <img 
-                                                src="{{ asset('storage/' . $image->webcam_image_path) }}" 
+                                                src="{{ Storage::url($image->webcam_image_path) }}" 
                                                 alt="Original"
                                                 class="w-16 h-16 object-cover rounded-lg border-2 border-white/80"
                                             >
@@ -106,7 +106,7 @@ new class extends Component {
                                     </div>
                                     <div class="absolute bottom-4 left-4">
                                         <img 
-                                            src="{{ asset('storage/' . $image->webcam_image_path) }}" 
+                                            src="{{ Storage::url($image->webcam_image_path) }}" 
                                             alt="Processing"
                                             class="w-16 h-16 object-cover rounded-lg border-2 border-gray-200 opacity-75"
                                         >
@@ -126,7 +126,7 @@ new class extends Component {
                                     </div>
                                     <div class="absolute bottom-4 left-4">
                                         <img 
-                                            src="{{ asset('storage/' . $image->webcam_image_path) }}" 
+                                            src="{{ Storage::url($image->webcam_image_path) }}" 
                                             alt="Queued"
                                             class="w-16 h-16 object-cover rounded-lg border-2 border-gray-200 opacity-50"
                                         >

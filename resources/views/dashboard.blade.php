@@ -47,9 +47,7 @@
         </div>
     </div>
 
-    <flux:toast.group position="bottom end" expanded>
-        <flux:toast />
-    </flux:toast.group>
+    <flux:toast />
 
     @livewireScripts
 </body>

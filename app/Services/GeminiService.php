@@ -4,21 +4,25 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class GeminiService
 {
     protected string $apiKey;
+    protected string $prompt;
     protected string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
 
     public function __construct()
     {
         $this->apiKey = config('services.gemini.api_key');
+        $this->prompt = config('services.gemini.prompt');
     }
 
     public function generateImageWithModifications(string $originalImagePath): ?string
     {
         try {
-            $imageContent = base64_encode(file_get_contents($originalImagePath));
+            // Read the image using Storage facade
+            $imageContent = base64_encode(Storage::get($originalImagePath));
             
             $response = Http::withHeaders([
                 'x-goog-api-key' => $this->apiKey,
@@ -27,7 +31,7 @@ class GeminiService
                     [
                         'parts' => [
                             [
-                                'text' => 'Create a picture with these modifications: Add a bust down diamond chain around the neck. If the person is smiling, add diamond grills to their teeth. Make it look realistic and luxurious with a cosmic Gemini constellation theme in the background.'
+                                'text' => $this->prompt
                             ],
                             [
                                 'inline_data' => [
@@ -49,20 +53,14 @@ class GeminiService
                 if (preg_match('/"data":\s*"([^"]+)"/', $responseBody, $matches)) {
                     $imageData = $matches[1];
                     
-                    // Save the image to storage
-                    $fileName = 'generated_' . uniqid() . '.png';
-                    $filePath = storage_path('app/public/images/' . $fileName);
+                    // Save the image using Storage facade
+                    $fileName = 'images/generated_' . uniqid() . '.png';
                     
-                    // Ensure directory exists
-                    if (!file_exists(dirname($filePath))) {
-                        mkdir(dirname($filePath), 0755, true);
-                    }
-                    
-                    // Decode and save the image
-                    file_put_contents($filePath, base64_decode($imageData));
+                    // Store the decoded image
+                    Storage::put($fileName, base64_decode($imageData));
                     
                     Log::info('Successfully extracted and saved generated image');
-                    return 'images/' . $fileName;
+                    return $fileName;
                 }
                 
                 // If no image data found in the response, log the structure
@@ -96,21 +94,14 @@ class GeminiService
     private function createPlaceholderImage(string $originalImagePath): ?string
     {
         try {
-            // For now, just copy the original with a "DRIPPED OUT" watermark
-            // In production, you'd want to use an image manipulation library
-            $fileName = 'generated_' . uniqid() . '.jpg';
-            $filePath = storage_path('app/public/images/' . $fileName);
-            
-            // Ensure directory exists
-            if (!file_exists(dirname($filePath))) {
-                mkdir(dirname($filePath), 0755, true);
-            }
-            
             // For demo purposes, just copy the original
             // In a real app, you'd add overlays/effects here
-            copy($originalImagePath, $filePath);
+            $fileName = 'images/generated_' . uniqid() . '.jpg';
             
-            return 'images/' . $fileName;
+            // Copy using Storage facade
+            Storage::put($fileName, Storage::get($originalImagePath));
+            
+            return $fileName;
         } catch (\Exception $e) {
             Log::error('Failed to create placeholder image', ['error' => $e->getMessage()]);
             return null;

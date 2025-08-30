@@ -37,6 +37,7 @@ return [
 
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
+        'prompt' => env('GEMINI_PROMPT', 'Add a bust down diamond chain around the neck. If the person is smiling, add diamond grills to their teeth. Add an orange Lamborghini in the background. Make it look realistic and luxurious.'),
     ],
 
 ];

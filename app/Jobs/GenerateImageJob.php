@@ -22,13 +22,14 @@ class GenerateImageJob implements ShouldQueue
             // Update status to processing
             $this->image->update(['status' => 'processing']);
 
-            // Set the prompt for the modifications
-            $prompt = 'Add a bust down diamond chain around the neck. If smiling, add diamond grills to the teeth. Add a orange Lambo in the background of the image.';
+            // Set the prompt for the modifications (from config)
+            $prompt = config('services.gemini.prompt');
             $this->image->update(['prompt' => $prompt]);
 
             // Generate modified image using the webcam image
+            // Pass the storage path, not the full file path
             $generatedImagePath = $geminiService->generateImageWithModifications(
-                storage_path('app/public/' . $this->image->webcam_image_path)
+                $this->image->webcam_image_path
             );
 
             if (!$generatedImagePath) {

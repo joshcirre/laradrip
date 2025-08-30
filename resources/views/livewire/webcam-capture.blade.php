@@ -5,6 +5,7 @@ use App\Models\Image;
 use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
 use Flux\Flux;
+use Illuminate\Support\Facades\Storage;
 
 new class extends Component {
     use WithFileUploads;
@@ -53,20 +54,15 @@ new class extends Component {
             $imageData = str_replace(' ', '+', $imageData);
             $decodedImage = base64_decode($imageData);
             
-            // Save webcam image
-            $fileName = 'webcam_' . uniqid() . '.jpg';
-            $filePath = storage_path('app/public/images/' . $fileName);
+            // Save webcam image using Storage facade
+            $fileName = 'images/webcam_' . uniqid() . '.jpg';
             
-            // Ensure directory exists
-            if (!file_exists(dirname($filePath))) {
-                mkdir(dirname($filePath), 0755, true);
-            }
-            
-            file_put_contents($filePath, $decodedImage);
+            // Store the image using Storage facade (works with S3 or any driver)
+            Storage::put($fileName, $decodedImage);
             
             // Create image record
             $image = Image::create([
-                'webcam_image_path' => 'images/' . $fileName,
+                'webcam_image_path' => $fileName,
                 'status' => 'pending',
             ]);
             
