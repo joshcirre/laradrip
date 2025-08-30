@@ -15,7 +15,7 @@
         <div class="flex flex-col items-start justify-start gap-2 w-full mb-6 sm:mb-8 lg:mb-10">
             <div class="flex items-center gap-3">
                 <h1 class="text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900">
-                    Laravel Drip Me Out
+                    LaraDrip Me Out
                 </h1>
                 <a href="https://github.com/joshcirre/laradrip" target="_blank" rel="noopener noreferrer"
                    class="text-gray-500 hover:text-gray-700 transition-colors"
