@@ -14,7 +14,8 @@ class MarkStuckImagesAsFailed extends Command
      */
     protected $signature = 'images:mark-failed 
                             {--hours=1 : Mark images stuck in processing/pending for more than X hours as failed}
-                            {--dry-run : Show what would be marked as failed without actually updating}';
+                            {--dry-run : Show what would be marked as failed without actually updating}
+                            {--all : Mark ALL processing/pending images as failed regardless of time}';
 
     /**
      * The console command description.
@@ -30,14 +31,23 @@ class MarkStuckImagesAsFailed extends Command
     {
         $hours = $this->option('hours');
         $dryRun = $this->option('dry-run');
+        $all = $this->option('all');
 
-        $this->info("Looking for images stuck in processing/pending status for more than {$hours} hour(s)...");
+        if ($all) {
+            $this->info('Looking for ALL images in processing/pending status...');
+        } else {
+            $this->info("Looking for images stuck in processing/pending status for more than {$hours} hour(s)...");
+        }
 
-        // Find stuck images - those in processing or pending status for more than X hours
-        $stuckImages = Image::whereIn('status', ['processing', 'pending'])
-            ->where('created_at', '<', now()->subHours($hours))
-            ->whereNull('generated_image_path')
-            ->get();
+        // Find stuck images
+        $query = Image::whereIn('status', ['processing', 'pending'])
+            ->whereNull('generated_image_path');
+
+        if (! $all) {
+            $query->where('created_at', '<', now()->subHours($hours));
+        }
+
+        $stuckImages = $query->get();
 
         if ($stuckImages->isEmpty()) {
             $this->info('No stuck images found.');
@@ -58,16 +68,20 @@ class MarkStuckImagesAsFailed extends Command
         }
 
         if ($this->confirm('Do you want to mark these images as failed?')) {
-            $updated = Image::whereIn('status', ['processing', 'pending'])
-                ->where('created_at', '<', now()->subHours($hours))
-                ->whereNull('generated_image_path')
-                ->update([
+            $updated = 0;
+
+            // Update each image individually to trigger model events and broadcasting
+            foreach ($stuckImages as $image) {
+                $image->update([
                     'status' => 'failed',
                     'error_message' => 'Job timed out or failed without proper error handling',
                 ]);
+                $updated++;
+            }
 
             $this->info("Successfully marked {$updated} image(s) as failed.");
             $this->info('Users can now use the "Try Again" button to retry these images.');
+            $this->info('The UI should update automatically via broadcasting.');
         } else {
             $this->info('Operation cancelled.');
         }
