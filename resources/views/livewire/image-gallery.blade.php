@@ -11,7 +11,7 @@ new class extends Component {
     public function with(): array
     {
         return [
-            'images' => Image::orderBy('created_at', 'desc')->paginate(12),
+            'images' => Image::where('status', '!=', 'failed')->orderBy('created_at', 'desc')->paginate(12),
             'completedCount' => Image::where('status', 'completed')->count(),
             'processingCount' => Image::whereIn('status', ['pending', 'processing'])->count(),
         ];
@@ -39,17 +39,6 @@ new class extends Component {
         $this->resetPage();
     }
 
-    public function retryImage(Image $image): void
-    {
-        // Reset the image status to pending and clear any error message
-        $image->update([
-            'status' => 'pending',
-            'error_message' => null,
-        ]);
-        
-        // Dispatch the job to regenerate the image
-        \App\Jobs\GenerateImageJob::dispatch($image);
-    }
 }; ?>
 
 <div class="w-full">
@@ -76,6 +65,7 @@ new class extends Component {
         @else
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 @foreach ($images as $image)
+                    @if ($image->status !== 'failed')
                     <div class="group" wire:key="image-{{ $image->id }}">
                         <div class="bg-white border border-gray-200 hover:border-gray-300 transition-colors overflow-hidden rounded-lg">
                             @if ($image->status === 'completed' && $image->generated_image_path)
@@ -119,13 +109,6 @@ new class extends Component {
                                         </p>
                                         <p class="text-xs text-gray-500 mt-1">This may take a moment</p>
                                     </div>
-                                    <div class="absolute bottom-4 left-4">
-                                        <img
-                                            src="{{ Storage::url($image->webcam_image_path) }}"
-                                            alt="Processing"
-                                            class="w-16 h-16 object-cover rounded-lg border-2 border-gray-200 opacity-75"
-                                        >
-                                    </div>
                                 </div>
                             @elseif ($image->status === 'pending')
                                 <div class="aspect-square bg-gray-50 flex items-center justify-center relative">
@@ -139,54 +122,11 @@ new class extends Component {
                                             Queued for processing
                                         </p>
                                     </div>
-                                    <div class="absolute bottom-4 left-4">
-                                        <img
-                                            src="{{ Storage::url($image->webcam_image_path) }}"
-                                            alt="Queued"
-                                            class="w-16 h-16 object-cover rounded-lg border-2 border-gray-200 opacity-50"
-                                        >
-                                    </div>
-                                </div>
-                            @else
-                                <div class="aspect-square bg-red-50 flex items-center justify-center relative">
-                                    <div class="text-center px-4">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10 mx-auto mb-3 text-red-500">
-                                            <circle cx="12" cy="12" r="10"/>
-                                            <path d="m15 9-6 6"/>
-                                            <path d="m9 9 6 6"/>
-                                        </svg>
-                                        <p class="text-sm font-medium text-red-600">
-                                            Generation failed
-                                        </p>
-                                        @if ($image->error_message)
-                                            <p class="text-xs text-red-500 mt-1">
-                                                {{ Str::limit($image->error_message, 50) }}
-                                            </p>
-                                        @endif
-                                        <button 
-                                            wire:click="retryImage({{ $image->id }})"
-                                            class="mt-3 px-3 py-1.5 bg-white border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-1">
-                                                <path d="M21.5 2v6h-6"/>
-                                                <path d="M2.5 22v-6h6"/>
-                                                <path d="M2 11.5a10 10 0 0 1 18.8-4.3"/>
-                                                <path d="M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                                            </svg>
-                                            Try Again
-                                        </button>
-                                    </div>
-                                    <div class="absolute bottom-4 left-4">
-                                        <img
-                                            src="{{ Storage::url($image->webcam_image_path) }}"
-                                            alt="Failed"
-                                            class="w-16 h-16 object-cover rounded-lg border-2 border-red-200 opacity-50"
-                                        >
-                                    </div>
                                 </div>
                             @endif
                         </div>
                     </div>
+                    @endif
                 @endforeach
             </div>
 
