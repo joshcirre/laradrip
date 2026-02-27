@@ -32,7 +32,13 @@ Run this before `composer install` if the secrets are available.
 
 ### Environment variables
 - `GEMINI_API_KEY` is required for AI image generation but not for basic app startup or tests
-- `BROADCAST_CONNECTION=log` by default; set to `reverb` for real-time WebSocket updates (optional)
+- `BROADCAST_CONNECTION=reverb` enables real-time gallery updates via WebSocket
+
+### Reverb (WebSocket broadcasting)
+- `laravel/reverb` is installed. Start with `php artisan reverb:start --host=0.0.0.0 --port=8080`
+- The `.env` must include `REVERB_APP_ID`, `REVERB_APP_KEY`, `REVERB_APP_SECRET`, `REVERB_HOST`, `REVERB_PORT`, `REVERB_SCHEME` plus their `VITE_REVERB_*` counterparts for the frontend
+- Without these `VITE_REVERB_*` vars, the browser console throws `"You must pass your app key when you instantiate Pusher"` — rebuild assets (`npm run build`) after adding them
+- If Reverb is not running, WebSocket connection errors appear in the console but the app still works (gallery just won't auto-refresh)
 
 ### Non-obvious gotchas
 - Vite manifest errors (`ViteException`) during tests or page loads mean frontend assets need rebuilding: run `npm run build`
