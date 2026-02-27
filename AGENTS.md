@@ -37,3 +37,6 @@ Run this before `composer install` if the secrets are available.
 ### Non-obvious gotchas
 - Vite manifest errors (`ViteException`) during tests or page loads mean frontend assets need rebuilding: run `npm run build`
 - The queue worker (`php artisan queue:listen --tries=1`) must be running for `GenerateImageJob` to process — without it, captured photos stay in "pending" status forever
+- After switching between package versions (e.g. re-running `composer install` after a version change), run `php artisan view:clear` to avoid stale compiled Blade views referencing classes from the wrong version
+- The Gemini model name in `GeminiService.php` is hardcoded as `gemini-2.5-flash-image-preview` which may become unavailable. The current working model is `gemini-2.5-flash-image`. If image generation fails with a 404, check the model name
+- Images are stored on the `local` (private) disk with `'serve' => true` — Laravel serves them via signed URLs. Run `php artisan storage:link` if the public storage symlink doesn't exist
